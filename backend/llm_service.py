@@ -4,14 +4,13 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
 
+api_key = os.getenv("GEMINI_API_KEY")
 llm = "gemini-2.5-flash-lite"
-# Initialize Client
 client = genai.Client(api_key=api_key)
 
-async def get_llm_response(processed_text):
-    response = await client.aio.models.generate_content(
+async def get_summary(processed_text):
+    response = await client.aio.models.generate_content_stream(
         model= llm,
         config=types.GenerateContentConfig(
             temperature=0.1,
@@ -23,11 +22,19 @@ async def get_llm_response(processed_text):
             processed_text
         ]
     )
-    return response.text
+
+    async def text_generator():
+        async for chunk in response:
+            yield chunk.text
+    return text_generator()
+
 
 async def get_tokens(processed_text):
     tokens = await client.aio.models.count_tokens(
         model=llm,
         contents=processed_text
     )
+
     return tokens.total_tokens
+
+

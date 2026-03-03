@@ -1,11 +1,12 @@
 .dropzone {
-  border: 1px solid #dadce0; /* Solid border */
+  position: relative;
+  border: 1px solid #dadce0;
   border-radius: 10px;
   padding: 40px;
   text-align: center;
   cursor: pointer;
-  transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s; /* Add box-shadow to transition */
-  background-color: #ffffff; /* White inside */
+  transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
+  background-color: #ffffff; 
   width: 100%;
   max-width: 500px;
 }
@@ -16,13 +17,23 @@
   color: #555;
 }
 
+.dropzone .tokens {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #888;
+}
+
 .dropzone:hover {
-  border-color: #8ab4f8; /* Google blue border on hover */
+  border-color: #f7de25;
   box-shadow: 0 1px 6px rgba(32,33,36,.28); /* Little glow on hover */
 }
 
 .dragOver {
-  border-color: #8ab4f8; /* Google blue border on drag over */
-  background-color: #e8f0fe; /* Light blue background on drag over */
-  box-shadow: 0 1px 6px rgba(32,33,36,.28); /* Little glow on drag over */
+  border-color: #8ab4f8; 
+  background-color: #e8f0fe; 
+  box-shadow: 0 1px 6px rgba(32,33,36,.28);
 }

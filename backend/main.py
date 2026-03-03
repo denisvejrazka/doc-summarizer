@@ -1,5 +1,6 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 import llm_service
 import preprocessor
 
@@ -12,19 +13,28 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+async def extract_text(file: UploadFile = File(...)):
+    content = await file.read()
+    if file.filename.endswith(".txt") or file.filename.endswith(".md"):
+        return content.decode("utf-8")
+    elif file.filename.endswith(".pdf"):
+        return preprocessor.process_pdf(content)
+    else:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unsupported file format: {preprocessor.remove_f_type_prefix(file.content_type)}"
+        )
+
+
 @app.post("/summarize")
 async def summarize(file: UploadFile = File(...)):
-    content = await file.read()
+    text = await extract_text(file)
+    stream_gen = await llm_service.get_summary(text)
+    return StreamingResponse(stream_gen, media_type="text/plain")
 
-    if file.filename.endswith(".txt") or file.filename.endswith(".md"):
-        text = content.decode("utf-8")
-        summarized_text = await llm_service.get_llm_response(text) 
-        return {"message": summarized_text}
-    
-    elif file.filename.endswith(".pdf"):
-        pdf_text = preprocessor.process_pdf(content)
-        summarized_text = await llm_service.get_llm_response(pdf_text) 
-        return {"message": summarized_text}
-    
-    else:
-        return {"message": f"Unsupported file format: {preprocessor.remove_f_type_prefix(file.content_type)}"}
+
+@app.post("/count_tokens")
+async def count_tokens(file: UploadFile = File(...)):
+    text = await extract_text(file)
+    tokens = await llm_service.get_tokens(text)
+    return {"total_tokens": tokens}

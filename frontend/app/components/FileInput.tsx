@@ -4,10 +4,11 @@ import { useState, useRef, ChangeEvent, DragEvent } from 'react';
 import styles from './FileInput.module.css';
 
 interface FileInputProps {
-  onFileSelect: (file: File) => void;
+  onFileSelect: (file: File | null) => void;
+  tokens?: number | null;
 }
 
-const FileInput: React.FC<FileInputProps> = ({ onFileSelect }) => {
+const FileInput: React.FC<FileInputProps> = ({ onFileSelect, tokens }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -21,6 +22,8 @@ const FileInput: React.FC<FileInputProps> = ({ onFileSelect }) => {
         onFileSelect(file);
       } else {
         alert("Unsupported file type. Please select a .pdf, .md, or .txt file.");
+        setSelectedFile(null);
+        onFileSelect(null);
       }
     }
   };
@@ -36,7 +39,7 @@ const FileInput: React.FC<FileInputProps> = ({ onFileSelect }) => {
   };
 
   const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault(); // This is necessary to allow dropping
+    event.preventDefault();
   };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
@@ -55,6 +58,8 @@ const FileInput: React.FC<FileInputProps> = ({ onFileSelect }) => {
         }
       } else {
         alert("Unsupported file type. Please select a .pdf, .md, or .txt file.");
+        setSelectedFile(null);
+        onFileSelect(null);
       }
     }
   };
@@ -86,7 +91,12 @@ const FileInput: React.FC<FileInputProps> = ({ onFileSelect }) => {
         style={{ display: 'none' }}
       />
       {selectedFile ? (
-        <p>Selected file: {selectedFile.name}</p>
+        <>
+          <p>Selected file: {selectedFile.name}</p>
+          {tokens !== undefined && tokens !== null && (
+            <p className={styles.tokens}>{tokens} tokens</p>
+          )}
+        </>
       ) : (
         <p>Drag & drop a file here, or click to select a file</p>
       )}

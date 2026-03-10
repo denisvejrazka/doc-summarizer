@@ -10,6 +10,7 @@ class User(SQLModel, table=True):
     hashed_password: str
     documents: List["Document"] = Relationship(back_populates="user")
 
+
 class Document(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     filename: str
@@ -18,6 +19,7 @@ class Document(SQLModel, table=True):
     user: User = Relationship(back_populates="documents")
     chunks: List["DocumentChunk"] = Relationship(back_populates="document",
                                                  sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+
 
 class DocumentChunk(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

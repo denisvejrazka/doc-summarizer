@@ -8,16 +8,16 @@ interface LoginProps {
 
 export default function Login({ onSuccess }: LoginProps) {
   const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (formData: FormData) => {
     setLoading(true);
     setError(null);
+
+    const email = formData.get("email") as string | null;
+    const username = formData.get("username") as string;
+    const password = formData.get("password") as string;
 
     const endpoint = isRegister ? "/register" : "/login";
     const payload = isRegister 
@@ -40,7 +40,7 @@ export default function Login({ onSuccess }: LoginProps) {
 
       const data = await res.json();
       if (onSuccess) {
-        onSuccess(data);
+        onSuccess({ ...data, username });
       }
     } catch (err: any) {
       setError(err.message);
@@ -55,16 +55,16 @@ export default function Login({ onSuccess }: LoginProps) {
         {isRegister ? "Create Account" : "Welcome Back"}
       </h2>
       
-      <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+      <form action={handleSubmit} className="w-full flex flex-col gap-4">
         {isRegister && (
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Email
             </label>
             <input
+              id="email"
+              name="email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               placeholder="email@example.com"
               className="px-4 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:bg-zinc-800"
               required
@@ -73,13 +73,13 @@ export default function Login({ onSuccess }: LoginProps) {
         )}
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="username" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Username
           </label>
           <input
+            id="username"
+            name="username"
             type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
             placeholder="johndoe"
             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:bg-zinc-800"
             required
@@ -87,13 +87,13 @@ export default function Login({ onSuccess }: LoginProps) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Password
           </label>
           <input
+            id="password"
+            name="password"
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:bg-zinc-800"
             required
@@ -114,7 +114,10 @@ export default function Login({ onSuccess }: LoginProps) {
       </form>
 
       <button
-        onClick={() => setIsRegister(!isRegister)}
+        onClick={() => {
+            setIsRegister(!isRegister);
+            setError(null);
+        }}
         className="mt-6 text-sm text-gray-600 dark:text-gray-400 hover:underline cursor-pointer"
       >
         {isRegister 

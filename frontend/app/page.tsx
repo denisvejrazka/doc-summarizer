@@ -3,24 +3,30 @@
 import { useState } from "react"
 import Main from "./components/Main";
 import Login from "./components/Login";
+import UserStatus from "./components/UserStatus";
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<{ username: string } | null>(null);
+
+  const handleLoginSuccess = (userData: { username: string }) => {
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+  };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 gap-12">
-      {!isLoggedIn ? (
-        <Login onSuccess={() => setIsLoggedIn(true)} />
+    <main className="flex min-h-screen flex-col items-center justify-center p-24 gap-12 relative">
+      {!user ? (
+        <Login onSuccess={handleLoginSuccess} />
       ) : (
-        <div className="w-full flex flex-col items-center">
-          <button 
-            onClick={() => setIsLoggedIn(false)}
-            className="self-end mb-4 text-sm text-gray-500 hover:underline cursor-pointer"
-          >
-            Log Out
-          </button>
-          <Main />
-        </div>
+        <>
+          <UserStatus username={user.username} onLogout={handleLogout} />
+          <div className="w-full flex flex-col items-center">
+            <Main />
+          </div>
+        </>
       )}
     </main>
   )

@@ -18,10 +18,11 @@ export default function Login({ onSuccess }: LoginProps) {
     const email = formData.get("email") as string | null;
     const username = formData.get("username") as string;
     const password = formData.get("password") as string;
+    const isPro = formData.get("isPro") === "on";
 
     const endpoint = isRegister ? "/register" : "/login";
     const payload = isRegister 
-      ? { email, username, password } 
+      ? { email, username, password, tier: isPro ? "pro" : "standard" } 
       : { username, password };
 
     try {
@@ -99,6 +100,20 @@ export default function Login({ onSuccess }: LoginProps) {
             required
           />
         </div>
+
+        {isRegister && (
+          <div className="flex items-center gap-2 mb-2">
+            <input
+              id="isPro"
+              name="isPro"
+              type="checkbox"
+              className="w-4 h-4 text-yellow-400 focus:ring-yellow-400 border-gray-300 rounded"
+            />
+            <label htmlFor="isPro" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Register with Pro plan
+            </label>
+          </div>
+        )}
 
         {error && (
           <p className="text-red-500 text-sm mt-2">{error}</p>

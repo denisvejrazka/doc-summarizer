@@ -4,7 +4,11 @@ import { useState } from "react"
 import FileInput from "./FileInput";
 import StreamingTextDisplay from "./StreamingTextDisplay";
 
-export default function Main() {
+interface MainProps {
+  tier?: string;
+}
+
+export default function Main({ tier = "standard" }: MainProps) {
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ message: string } | null>(null)
@@ -119,34 +123,36 @@ export default function Main() {
             {/* Default Buttons View */}
             <div className={`absolute flex gap-1 h-full transition-all duration-300 ${!isSearchVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
               {/* Mode selection */}
-              <div className="relative h-full w-32">
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className={`bg-yellow-400 text-white px-4 py-3 hover:bg-yellow-500 disabled:bg-gray-400 cursor-pointer flex items-center justify-between gap-1 h-full w-full text-lg transition-all ${isDropdownOpen ? 'rounded-t-lg rounded-b-none' : 'rounded-lg'}`}
-                  disabled={loading}
-                >
-                  <span>{isProMode ? "Pro" : "Standard"}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}>
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </button>
-                {isDropdownOpen && (
-                  <div className="absolute right-0 mt-0 w-full bg-white dark:bg-zinc-800 border border-yellow-400 rounded-b-lg shadow-lg z-10 overflow-hidden border-t-0">
-                    <button
-                      onClick={() => { setIsProMode(false); setIsDropdownOpen(false); }}
-                      className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-200 ${!isProMode ? 'bg-gray-50 dark:bg-zinc-700 font-semibold' : ''}`}
-                    >
-                      Standard
-                    </button>
-                    <button
-                      onClick={() => { setIsProMode(true); setIsDropdownOpen(false); }}
-                      className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-200 ${isProMode ? 'bg-gray-50 dark:bg-zinc-700 font-semibold' : ''}`}
-                    >
-                      Pro
-                    </button>
-                  </div>
-                )}
-              </div>
+              {tier === "pro" && (
+                <div className="relative h-full w-32">
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className={`bg-yellow-400 text-white px-4 py-3 hover:bg-yellow-500 disabled:bg-gray-400 cursor-pointer flex items-center justify-between gap-1 h-full w-full text-lg transition-all ${isDropdownOpen ? 'rounded-t-lg rounded-b-none' : 'rounded-lg'}`}
+                    disabled={loading}
+                  >
+                    <span>{isProMode ? "Pro" : "Standard"}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}>
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </button>
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-0 w-full bg-white dark:bg-zinc-800 border border-yellow-400 rounded-b-lg shadow-lg z-10 overflow-hidden border-t-0">
+                      <button
+                        onClick={() => { setIsProMode(false); setIsDropdownOpen(false); }}
+                        className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-200 ${!isProMode ? 'bg-gray-50 dark:bg-zinc-700 font-semibold' : ''}`}
+                      >
+                        Standard
+                      </button>
+                      <button
+                        onClick={() => { setIsProMode(true); setIsDropdownOpen(false); }}
+                        className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-200 ${isProMode ? 'bg-gray-50 dark:bg-zinc-700 font-semibold' : ''}`}
+                      >
+                        Pro
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* searching */}
               <button
@@ -163,7 +169,7 @@ export default function Main() {
               {/* summarization */}
               <button 
                 onClick={handleSummarization} 
-                className="bg-yellow-400 text-white px-6 py-3 rounded-lg text-lg hover:bg-yellow-500 disabled:bg-gray-400 cursor-pointer h-full flex items-center"
+                className={`bg-yellow-400 text-white px-6 py-3 text-lg hover:bg-yellow-500 disabled:bg-gray-400 cursor-pointer h-full flex items-center ${tier === "standard" ? 'rounded-lg' : 'rounded-r-lg'}`}
                 disabled={loading}
               >
                 {loading ? "Summarizing..." : "Summarize"}

@@ -6,9 +6,10 @@ import preprocessor
 from contextlib import asynccontextmanager
 from database import init_db, get_session
 from user_models import UserLogin, UserRegister
-from db_models import User
+from db_models import User, Document
 from sqlmodel import select, Session, or_
 import security_utils
+from datetime import datetime, timezone
 
 # initialize the database
 @asynccontextmanager
@@ -54,6 +55,36 @@ async def count_tokens(file: UploadFile = File(...)):
     return {"total_tokens": tokens}
 
 
+@app.post("/upload")
+async def upload_document(file: UploadFile = File(...), 
+                          session: Session = Depends(get_session), 
+                          current_user: User = Depends(security_utils.get_current_user)):
+    text = await extract_text(file)
+    tokens = await llm_service.get_tokens(text)
+    
+    if current_user.tier == "standard":
+        if tokens > 15000:
+            raise HTTPException(status_code=403, 
+                                detail=f"Your document reached the maximum allowed token limit of the standard tier. ({tokens})")
+        
+        standard_doc = Document(
+            filename=file.filename,
+            user_id=current_user.id,
+            upload_date=datetime.now(timezone.utc),
+            tokens=tokens,
+            content=text,
+        )
+
+    else:
+        pro_doc = Document(
+        filename=file.filename,
+        user_id=current_user.id,
+        upload_date=datetime.now(timezone.utc),
+        tokens=tokens,
+        chunks=None
+    )
+
+
 @app.post("/login")
 async def login(user_data: UserLogin, session: Session = Depends(get_session)):
     statement = select(User).where(User.username == user_data.username)
@@ -65,8 +96,8 @@ async def login(user_data: UserLogin, session: Session = Depends(get_session)):
     if not security_utils.verify_password(user_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid password")
     
-    token = security_utils.create_access_token(data={"sub": user.username})
-    return {"access_token": token, "token_type": "bearer"}
+    token = security_utils.create_access_token(data={"sub": user.username, "tier": user.tier})
+    return {"access_token": token, "token_type": "bearer", "tier": user.tier}
     
     
 @app.post("/register")
@@ -80,12 +111,13 @@ async def register(user_data: UserRegister, session: Session = Depends(get_sessi
     new_user = User(
         username=user_data.username,
         email=user_data.email,
-        hashed_password=security_utils.hash_password(user_data.password)
+        hashed_password=security_utils.hash_password(user_data.password),
+        tier=user_data.tier
     )
 
     session.add(new_user)
     session.commit()
     session.refresh(new_user)
     
-    token = security_utils.create_access_token(data={"sub": new_user.username})
-    return {"access_token": token, "token_type": "bearer"}
+    token = security_utils.create_access_token(data={"sub": new_user.username, "tier": new_user.tier})
+    return {"access_token": token, "token_type": "bearer", "tier": new_user.tier}

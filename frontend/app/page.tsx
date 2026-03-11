@@ -6,9 +6,9 @@ import Login from "./components/Login";
 import UserStatus from "./components/UserStatus";
 
 export default function Home() {
-  const [user, setUser] = useState<{ username: string } | null>(null);
+  const [user, setUser] = useState<{ username: string, tier: string } | null>(null);
 
-  const handleLoginSuccess = (userData: { username: string }) => {
+  const handleLoginSuccess = (userData: { username: string, tier: string }) => {
     setUser(userData);
   };
 
@@ -24,7 +24,7 @@ export default function Home() {
         <>
           <UserStatus username={user.username} onLogout={handleLogout} />
           <div className="w-full flex flex-col items-center">
-            <Main />
+            <Main tier={user.tier} />
           </div>
         </>
       )}

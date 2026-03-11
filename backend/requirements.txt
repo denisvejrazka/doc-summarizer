@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlmodel
+google-genai
+python-dotenv
+pgvector
+sqlalchemy
+pypdf
+passlib[bcrypt]
+pyjwt
+python-multipart

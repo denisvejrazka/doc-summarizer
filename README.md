@@ -45,7 +45,7 @@ This project is my personal **AI sandbox**. I built it because I’m fascinated 
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 ├── backend/                # FastAPI application

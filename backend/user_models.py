@@ -10,3 +10,9 @@ class UserRegister(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
+
+
+class SearchRequest(BaseModel):
+    document_id: int
+    query: str
+    mode: str = "standard"

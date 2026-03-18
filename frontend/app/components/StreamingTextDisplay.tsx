@@ -13,6 +13,10 @@ const StreamingTextDisplay: React.FC<StreamingTextDisplayProps> = ({ text }) => 
   const lastUpdateTimeRef = useRef(0);
 
   useEffect(() => {
+    if (text === "" || text.length < currentTextRef.current.length) {
+      currentTextRef.current = "";
+      setDisplayedText("");
+    }
     targetTextRef.current = text;
   }, [text]);
 

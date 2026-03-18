@@ -5,7 +5,7 @@ import llm_service
 import preprocessor
 from contextlib import asynccontextmanager
 from database import init_db, get_session
-from user_models import UserLogin, UserRegister
+from user_models import UserLogin, UserRegister, SearchRequest
 from db_models import User, Document
 from sqlmodel import select, Session, or_
 import security_utils
@@ -41,8 +41,14 @@ async def extract_text(file: UploadFile = File(...)):
 
 # summarize endpoint
 @app.post("/summarize")
-async def summarize(file: UploadFile = File(...)):
+async def summarize(file: UploadFile = File(...), current_user: User = Depends(security_utils.get_current_user)):
     text = await extract_text(file)
+    tokens = await llm_service.get_tokens(text)
+
+    if current_user.tier == "standard" and tokens > 15000:
+        raise HTTPException(status_code=403, 
+                            detail=f"Your document reached the maximum allowed token limit of the standard tier. ({tokens})")
+
     stream_gen = await llm_service.get_summary(text)
     return StreamingResponse(stream_gen, media_type="text/plain")
 
@@ -62,27 +68,23 @@ async def upload_document(file: UploadFile = File(...),
     text = await extract_text(file)
     tokens = await llm_service.get_tokens(text)
     
-    if current_user.tier == "standard":
-        if tokens > 15000:
-            raise HTTPException(status_code=403, 
-                                detail=f"Your document reached the maximum allowed token limit of the standard tier. ({tokens})")
+    if current_user.tier == "standard" and tokens > 15000:
+        raise HTTPException(status_code=403, 
+                            detail=f"Your document reached the maximum allowed token limit of the standard tier. ({tokens})")
         
-        standard_doc = Document(
-            filename=file.filename,
-            user_id=current_user.id,
-            upload_date=datetime.now(timezone.utc),
-            tokens=tokens,
-            content=text,
-        )
-
-    else:
-        pro_doc = Document(
+    doc = Document(
         filename=file.filename,
         user_id=current_user.id,
         upload_date=datetime.now(timezone.utc),
         tokens=tokens,
-        chunks=None
+        content=text,
     )
+
+    session.add(doc)
+    session.commit()
+    session.refresh(doc)
+
+    return {"document_id": doc.id}
 
 
 @app.post("/login")
@@ -121,3 +123,19 @@ async def register(user_data: UserRegister, session: Session = Depends(get_sessi
     
     token = security_utils.create_access_token(data={"sub": new_user.username, "tier": new_user.tier})
     return {"access_token": token, "token_type": "bearer", "tier": new_user.tier}
+
+
+@app.post("/search")
+async def search(search_req: SearchRequest, current_user: User = Depends(security_utils.get_current_user), session: Session = Depends(get_session)):
+    statement = select(Document).where(Document.id == search_req.document_id)
+    doc = session.exec(statement).first()
+
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    if doc.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied to this document")
+
+    stream_gen = await llm_service.standard_search(search_req.query, doc.content)
+
+    return StreamingResponse(stream_gen, media_type="text/plain")

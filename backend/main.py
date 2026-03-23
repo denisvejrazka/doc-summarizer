@@ -135,7 +135,9 @@ async def search(search_req: SearchRequest, current_user: User = Depends(securit
 
     if doc.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied to this document")
-
-    stream_gen = await llm_service.standard_search(search_req.query, doc.content)
-
-    return StreamingResponse(stream_gen, media_type="text/plain")
+    
+    if search_req.mode == "standard":
+        stream_gen = await llm_service.standard_search(search_req.query, doc.content)
+        return StreamingResponse(stream_gen, media_type="text/plain")
+    else:
+        pass

@@ -26,7 +26,8 @@ async def get_summary(processed_text):
 
     async def text_generator():
         async for chunk in response:
-            yield chunk.text
+            if chunk.text is not None:
+                yield chunk.text
     return text_generator()
 
 
@@ -46,7 +47,8 @@ async def standard_search(user_prompt, processed_text):
 
     async def text_generator():
         async for chunk in response:
-            yield chunk.text
+            if chunk.text is not None:
+                yield chunk.text
 
     return text_generator()
 
@@ -59,4 +61,7 @@ async def get_tokens(processed_text):
 
     return tokens.total_tokens
 
+
+async def pro_search(user_prompt):
+    pass
 

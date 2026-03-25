@@ -5,8 +5,8 @@ import llm_service
 import preprocessor
 from contextlib import asynccontextmanager
 from database import init_db, get_session
-from user_models import UserLogin, UserRegister, SearchRequest
-from db_models import User, Document
+from models import UserLogin, UserRegister, SearchRequest
+from db_models import User, Document, DocumentChunk
 from sqlmodel import select, Session, or_
 import security_utils
 from datetime import datetime, timezone
@@ -26,23 +26,21 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# extract text (supports: .md, .pdf, .txt files)
-async def extract_text(file: UploadFile = File(...)):
+async def get_document_file(file: UploadFile):
     content = await file.read()
-    if file.filename.endswith(".txt") or file.filename.endswith(".md"):
-        return content.decode("utf-8")
-    elif file.filename.endswith(".pdf"):
-        return preprocessor.process_pdf(content)
-    else:
+    try:
+        return preprocessor.process_file(file.filename, content)
+    except ValueError:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"Unsupported file format: {preprocessor.remove_f_type_prefix(file.content_type)}"
         )
 
 # summarize endpoint
 @app.post("/summarize")
 async def summarize(file: UploadFile = File(...), current_user: User = Depends(security_utils.get_current_user)):
-    text = await extract_text(file)
+    doc_file = await get_document_file(file)
+    text = doc_file.content
     tokens = await llm_service.get_tokens(text)
 
     if current_user.tier == "standard" and tokens > 15000:
@@ -56,28 +54,39 @@ async def summarize(file: UploadFile = File(...), current_user: User = Depends(s
 # gets the total tokens of inputted file
 @app.post("/count_tokens")
 async def count_tokens(file: UploadFile = File(...)):
-    text = await extract_text(file)
-    tokens = await llm_service.get_tokens(text)
+    doc_file = await get_document_file(file)
+    tokens = await llm_service.get_tokens(doc_file.content)
     return {"total_tokens": tokens}
 
 
 @app.post("/upload")
-async def upload_document(file: UploadFile = File(...), 
-                          session: Session = Depends(get_session), 
+async def upload_document(file: UploadFile = File(...),
+                          session: Session = Depends(get_session),
                           current_user: User = Depends(security_utils.get_current_user)):
-    text = await extract_text(file)
-    tokens = await llm_service.get_tokens(text)
-    
+    doc_file = await get_document_file(file)
+    tokens = await llm_service.get_tokens(doc_file.content)
+
     if current_user.tier == "standard" and tokens > 15000:
-        raise HTTPException(status_code=403, 
+        raise HTTPException(status_code=403,
                             detail=f"Your document reached the maximum allowed token limit of the standard tier. ({tokens})")
-        
+
+    chunks = []
+    for chunk in doc_file.chunks:
+        embedding = await llm_service.embed(chunk.content, "RETRIEVAL_DOCUMENT")
+        chunks.append(DocumentChunk(
+            content=chunk.content,
+            embedding=embedding,
+            chunk_metadata=chunk.metadata
+        ))
+
     doc = Document(
-        filename=file.filename,
+        filename=doc_file.filename,
+        file_type=doc_file.file_type,
         user_id=current_user.id,
         upload_date=datetime.now(timezone.utc),
         tokens=tokens,
-        content=text,
+        chunks=chunks,
+        content=doc_file.content,
     )
 
     session.add(doc)

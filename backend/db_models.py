@@ -17,6 +17,7 @@ class User(SQLModel, table=True):
 class Document(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     filename: str
+    file_type: str
     upload_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user_id: int = Field(foreign_key="user.id")
     user: User = Relationship(back_populates="documents")
@@ -29,7 +30,7 @@ class Document(SQLModel, table=True):
 class DocumentChunk(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     content: str 
-    page_number: Optional[int] = Field(default=None)
+    chunk_metadata: Optional[str] = Field(default=None)
     embedding: List[float] = Field(sa_column=Column(Vector(768))) 
     document_id: int = Field(foreign_key="document.id")
     document: Document = Relationship(back_populates="chunks")

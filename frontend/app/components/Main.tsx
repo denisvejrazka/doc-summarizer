@@ -3,12 +3,20 @@
 import { useState, useRef, useEffect } from "react"
 import FileInput from "./FileInput";
 import StreamingTextDisplay from "./StreamingTextDisplay";
+import ChatHistoryCard from "./ChatHistoryCard";
+
+interface HistoryEntry {
+  question: string;
+  answer: string;
+  fileName: string;
+}
 
 interface MainProps {
   tier?: string;
+  username?: string;
 }
 
-export default function Main({ tier = "standard" }: MainProps) {
+export default function Main({ tier = "standard", username = "User" }: MainProps) {
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ message: string } | null>(null)
@@ -18,6 +26,9 @@ export default function Main({ tier = "standard" }: MainProps) {
   const [tokens, setTokens] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [documentId, setDocumentId] = useState<number | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const currentQueryRef = useRef<string>("");
+  const lastAnswerRef = useRef<string>("");
 
   const searchTextAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -42,7 +53,16 @@ export default function Main({ tier = "standard" }: MainProps) {
       setResult({ message: "Document is still being processed or upload failed. Please wait or try again." });
       return;
     }
-    
+
+    if (lastAnswerRef.current && currentQueryRef.current && file) {
+      setHistory((prev) => [
+        ...prev,
+        { question: currentQueryRef.current, answer: lastAnswerRef.current, fileName: file.name },
+      ]);
+    }
+
+    currentQueryRef.current = searchQuery;
+    lastAnswerRef.current = "";
     setLoading(true);
     setResult(null); // Ensure unmount/remount of StreamingTextDisplay
 
@@ -80,6 +100,7 @@ export default function Main({ tier = "standard" }: MainProps) {
         accumulatedText += decoder.decode(value);
         setResult({ message: accumulatedText });
       }
+      lastAnswerRef.current = accumulatedText;
     } catch (err) {
       console.error("Search failed:", err);
       setResult({ message: "An error occurred while searching. Please check your connection." });
@@ -305,6 +326,21 @@ export default function Main({ tier = "standard" }: MainProps) {
         <pre className="p-4 rounded whitespace-pre-wrap w-full max-w-6xl text-center">
           <StreamingTextDisplay text={result.message} />
         </pre>
+      )}
+
+      {/* Chat history */}
+      {history.length > 0 && (
+        <div className="flex flex-col gap-4 w-full max-w-6xl mb-4">
+          {history.map((entry, i) => (
+            <ChatHistoryCard
+              key={i}
+              username={username}
+              question={entry.question}
+              answer={entry.answer}
+              fileName={entry.fileName}
+            />
+          ))}
+        </div>
       )}
     </div>
   )

@@ -7,6 +7,7 @@ load_dotenv()
 
 api_key = os.getenv("GEMINI_API_KEY")
 llm = "gemini-2.5-flash-lite"
+embedding_model = "gemini-embedding-2-preview"
 client = genai.Client(api_key=api_key)
 
 
@@ -65,3 +66,14 @@ async def get_tokens(processed_text):
 async def pro_search(user_prompt):
     pass
 
+
+async def embed(text: str, task_type: str) -> list[float]:
+    result = await client.aio.models.embed_content(
+        model=embedding_model,
+        contents=text,
+        config=types.EmbedContentConfig(
+            task_type=task_type,
+            output_dimensionality=768
+        )
+    )
+    return result.embeddings[0].values

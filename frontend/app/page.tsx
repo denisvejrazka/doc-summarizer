@@ -41,7 +41,7 @@ export default function Home() {
         <>
           <UserStatus username={user.username} onLogout={handleLogout} />
           <div className="w-full flex flex-col items-center">
-            <Main tier={user.tier} />
+            <Main tier={user.tier} username={user.username} />
           </div>
         </>
       )}

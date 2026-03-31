@@ -1,6 +1,6 @@
 # Doc-Summarizer
 
-**Doc-Summarizer** is a full-stack application designed for efficient document summarization and Q&A using advanced AI.
+**Doc-Summarizer** is a full-stack application designed for efficient document summarization and Q&A using AI.
 
 ![Doc-Summarizer User Interface](ds_ui.png)
 
@@ -33,7 +33,7 @@ This is my personal project, built to explore and experiment with:
 
 ### Backend
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python)
-- **Database**: PostgreSQL with [pgvector](https://github.com/pgvector/pgvector) (The foundation for my future RAG mode)
+- **Database**: PostgreSQL with [pgvector](https://github.com/pgvector/pgvector)
 - **ORM**: [SQLModel](https://sqlmodel.tiangolo.com/)
 - **LLM Provider**: [Google Gemini API](https://ai.google.dev/) (`gemini-2.5-flash-lite`)
 - **Embeddings**: `gemini-embedding-2-preview` (768 dimensions)

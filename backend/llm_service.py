@@ -63,8 +63,27 @@ async def get_tokens(processed_text):
     return tokens.total_tokens
 
 
-async def pro_search(user_prompt):
-    pass
+async def pro_search(user_prompt: str, chunks: list):
+    context = "\n\n".join([chunk.content for chunk in chunks])
+    response = await client.aio.models.generate_content_stream(
+        model= llm,
+        config=types.GenerateContentConfig(
+            temperature=0.1,
+            system_instruction="You are a professional assistant. Answer questions based ONLY on the provided text. If the information is not in the text, say you don't know. Do not use outside knowledge",
+            max_output_tokens=1024
+        ),
+        contents=[
+            f"Question: {user_prompt}",
+            f"Document Context: {context}"
+        ]
+    )
+
+    async def text_generator():
+        async for chunk in response:
+            if chunk.text is not None:
+                yield chunk.text
+
+    return text_generator()
 
 
 async def embed(text: str, task_type: str) -> list[float]:

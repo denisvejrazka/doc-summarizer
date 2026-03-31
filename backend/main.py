@@ -10,6 +10,7 @@ from db_models import User, Document, DocumentChunk
 from sqlmodel import select, Session, or_
 import security_utils
 from datetime import datetime, timezone
+from rag.rag_service import retrieve_chunks
 
 # initialize the database
 @asynccontextmanager
@@ -149,4 +150,10 @@ async def search(search_req: SearchRequest, current_user: User = Depends(securit
         stream_gen = await llm_service.standard_search(search_req.query, doc.content)
         return StreamingResponse(stream_gen, media_type="text/plain")
     else:
-        pass
+        query_embedding = await llm_service.embed(search_req.query, "RETRIEVAL_QUERY")
+        chunks = retrieve_chunks(
+            session=session, 
+            document_id=doc.id, 
+            query_embedding=query_embedding)
+        stream_gen = await llm_service.pro_search(search_req.query, chunks)
+        return StreamingResponse(stream_gen, media_type="text/plain")

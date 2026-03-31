@@ -9,13 +9,9 @@ export default function Home() {
   const [user, setUser] = useState<{ username: string, tier: string } | null>(null);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    const savedUsername = localStorage.getItem("username");
-    const savedTier = localStorage.getItem("tier");
-
-    if (savedToken && savedUsername && savedTier) {
-      setUser({ username: savedUsername, tier: savedTier });
-    }
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("tier");
   }, []);
 
   const handleLoginSuccess = (userData: any) => {

@@ -27,7 +27,7 @@ export default function Main({ tier = "standard", username = "User" }: MainProps
   const [searchQuery, setSearchQuery] = useState("");
   const [documentId, setDocumentId] = useState<number | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const currentQueryRef = useRef<string>("");
+  const lastQueryRef = useRef<string>("");
   const lastAnswerRef = useRef<string>("");
 
   const searchTextAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -54,17 +54,20 @@ export default function Main({ tier = "standard", username = "User" }: MainProps
       return;
     }
 
-    if (lastAnswerRef.current && currentQueryRef.current && file) {
+    // Save previous Q&A to history before starting new search
+    const prevQuery = lastQueryRef.current;
+    const prevAnswer = lastAnswerRef.current;
+    if (prevAnswer && prevQuery && file) {
       setHistory((prev) => [
         ...prev,
-        { question: currentQueryRef.current, answer: lastAnswerRef.current, fileName: file.name },
+        { question: prevQuery, answer: prevAnswer, fileName: file.name },
       ]);
     }
 
-    currentQueryRef.current = searchQuery;
+    lastQueryRef.current = searchQuery;
     lastAnswerRef.current = "";
     setLoading(true);
-    setResult(null); // Ensure unmount/remount of StreamingTextDisplay
+    setResult(null);
 
     try {
       const res = await fetch("http://localhost:8000/search", {

@@ -12,7 +12,7 @@ import security_utils
 from datetime import datetime, timezone
 from rag.rag_service import retrieve_chunks
 
-# initialize the database
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
@@ -37,7 +37,7 @@ async def get_document_file(file: UploadFile):
             detail=f"Unsupported file format: {preprocessor.remove_f_type_prefix(file.content_type)}"
         )
 
-# summarize endpoint
+
 @app.post("/summarize")
 async def summarize(file: UploadFile = File(...), current_user: User = Depends(security_utils.get_current_user)):
     doc_file = await get_document_file(file)
@@ -137,14 +137,11 @@ async def register(user_data: UserRegister, session: Session = Depends(get_sessi
 
 @app.post("/search")
 async def search(search_req: SearchRequest, current_user: User = Depends(security_utils.get_current_user), session: Session = Depends(get_session)):
-    statement = select(Document).where(Document.id == search_req.document_id)
+    statement = select(Document).where(Document.id == search_req.document_id, Document.user_id == current_user.id)
     doc = session.exec(statement).first()
 
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-
-    if doc.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied to this document")
     
     if search_req.mode == "standard":
         stream_gen = await llm_service.standard_search(search_req.query, doc.content)
